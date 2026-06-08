@@ -51,7 +51,7 @@ pipeline {
                             curl -L https://github.com/jeremylong/DependencyCheck/releases/download/v10.0.3/dependency-check-10.0.3-release.zip -o dc.zip
                             tar -xf dc.zip
                         )
-                        dependency-check\\bin\\dependency-check.bat --scan backend --format HTML --format XML --out . --noupdate
+                        dependency-check\\bin\\dependency-check.bat --scan backend --format HTML --format XML --out .
                     '''
                 }
             }
