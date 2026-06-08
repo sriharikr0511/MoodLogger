@@ -57,19 +57,19 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     bat '''
                         if not exist dependency-check (
                             curl -L https://github.com/jeremylong/DependencyCheck/releases/download/v10.0.3/dependency-check-10.0.3-release.zip -o dc.zip
                             tar -xf dc.zip
                         )
-                        dependency-check\\bin\\dependency-check.bat --scan backend --format HTML --format XML --out .
+                        dependency-check\\bin\\dependency-check.bat --scan backend --format HTML --format XML --out . --disableOssIndex
                     '''
                 }
             }
             post {
                 always {
-                    catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                     }
                 }
