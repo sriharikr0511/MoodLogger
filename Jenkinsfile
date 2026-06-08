@@ -18,6 +18,18 @@ pipeline {
             }
         }
 
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                }
+            }
+        }
+
         stage('Dependency Install') {
             steps {
                 echo 'Installing backend dependencies...'
@@ -67,8 +79,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker images...'
-                bat 'docker build -t %DOCKER_IMAGE%-backend:latest ./backend'
-                bat 'docker build -t %DOCKER_IMAGE%-frontend:latest ./frontend'
+                bat 'docker build --no-cache -t %DOCKER_IMAGE%-backend:latest ./backend'
+                bat 'docker build --no-cache -t %DOCKER_IMAGE%-frontend:latest ./frontend'
             }
         }
 
@@ -79,7 +91,6 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
                     bat 'docker push %DOCKER_IMAGE%-backend:latest'
                     bat 'docker push %DOCKER_IMAGE%-frontend:latest'
                 }
