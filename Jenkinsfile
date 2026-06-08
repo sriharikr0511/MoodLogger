@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'NodeJS'          // must match name in Jenkins > Tools
-        'org.jenkinsci.plugins.DependencyCheck.tools.DependencyCheckInstallation' 'DC'
+        nodejs 'NodeJS'
     }
 
     environment {
@@ -15,8 +14,7 @@ pipeline {
 
         stage('Git Version') {
             steps {
-                echo 'Checking Git version...'
-                sh 'git --version'
+                bat 'git --version'
             }
         }
 
@@ -24,7 +22,7 @@ pipeline {
             steps {
                 echo 'Installing backend dependencies...'
                 dir('backend') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -33,12 +31,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     script {
-                        def scannerHome = tool 'SonarScanner'
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT} \
-                            -Dsonar.sources=backend \
-                            -Dsonar.host.url=http://host.docker.internal:9000
+                        def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        bat """
+                            "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                            -Dsonar.projectKey=moodlogger ^
+                            -Dsonar.sources=backend ^
+                            -Dsonar.host.url=http://localhost:9000
                         """
                     }
                 }
@@ -55,17 +53,17 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker images...'
-                sh 'docker build -t ${DOCKER_IMAGE}-backend:latest ./backend'
-                sh 'docker build -t ${DOCKER_IMAGE}-frontend:latest ./frontend'
+                bat 'docker build -t %DOCKER_IMAGE%-backend:latest ./backend'
+                bat 'docker build -t %DOCKER_IMAGE%-frontend:latest ./frontend'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push ${DOCKER_IMAGE}-backend:latest'
-                    sh 'docker push ${DOCKER_IMAGE}-frontend:latest'
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat 'docker push %DOCKER_IMAGE%-backend:latest'
+                    bat 'docker push %DOCKER_IMAGE%-frontend:latest'
                 }
             }
         }
@@ -73,12 +71,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying containers...'
-                sh 'docker stop moodlogger-backend || true'
-                sh 'docker stop moodlogger-frontend || true'
-                sh 'docker rm moodlogger-backend || true'
-                sh 'docker rm moodlogger-frontend || true'
-                sh 'docker run -d --name moodlogger-backend -p 5000:5000 ${DOCKER_IMAGE}-backend:latest'
-                sh 'docker run -d --name moodlogger-frontend -p 3000:80 ${DOCKER_IMAGE}-frontend:latest'
+                bat 'docker stop moodlogger-backend || exit 0'
+                bat 'docker stop moodlogger-frontend || exit 0'
+                bat 'docker rm moodlogger-backend || exit 0'
+                bat 'docker rm moodlogger-frontend || exit 0'
+                bat 'docker run -d --name moodlogger-backend -p 5000:5000 %DOCKER_IMAGE%-backend:latest'
+                bat 'docker run -d --name moodlogger-frontend -p 3000:80 %DOCKER_IMAGE%-frontend:latest'
             }
         }
     }
