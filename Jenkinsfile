@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "YOUR_DOCKERHUB_USERNAME/moodlogger"
+        DOCKER_IMAGE = "sriharikr0511/moodlogger"
         SONAR_PROJECT = "moodlogger"
     }
 
