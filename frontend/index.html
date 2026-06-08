@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mood Logger</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 60px auto; background: #f0f4ff; }
+    h1 { color: #3b3b8f; }
+    input { padding: 10px; width: 70%; border: 1px solid #aaa; border-radius: 6px; }
+    button { padding: 10px 16px; background: #3b3b8f; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; padding: 10px; margin: 6px 0; border-radius: 6px; border-left: 4px solid #3b3b8f; }
+  </style>
+</head>
+<body>
+  <h1>🌤 Mood Logger</h1>
+  <input id="moodInput" placeholder="How are you feeling?" />
+  <button onclick="saveMood()">Log Mood</button>
+  <ul id="moodList"></ul>
+
+  <script>
+    const API = 'http://localhost:5000';
+
+    async function loadMoods() {
+      const res = await fetch(`${API}/moods`);
+      const data = await res.json();
+      document.getElementById('moodList').innerHTML =
+        data.map(m => `<li>${m.mood} <small style="color:#999">${new Date(m.time).toLocaleTimeString()}</small></li>`).join('');
+    }
+
+    async function saveMood() {
+      const mood = document.getElementById('moodInput').value;
+      await fetch(`${API}/mood`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mood })
+      });
+      document.getElementById('moodInput').value = '';
+      loadMoods();
+    }
+
+    loadMoods();
+  </script>
+</body>
+</html>
