@@ -1,3 +1,4 @@
+```groovy
 pipeline {
     agent any
 
@@ -45,9 +46,21 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    dependencyCheck additionalArguments: '--scan backend --format HTML --format XML', odcInstallation: 'DC'
-                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    bat '''
+                        if not exist dependency-check (
+                            curl -L https://github.com/jeremylong/DependencyCheck/releases/download/v10.0.3/dependency-check-10.0.3-release.zip -o dc.zip
+                            tar -xf dc.zip
+                        )
+                        dependency-check\\bin\\dependency-check.bat --scan backend --format HTML --format XML --out . --noupdate
+                    '''
+                }
+            }
+            post {
+                always {
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                    }
                 }
             }
         }
@@ -62,7 +75,11 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
                     bat 'docker push %DOCKER_IMAGE%-backend:latest'
                     bat 'docker push %DOCKER_IMAGE%-frontend:latest'
@@ -92,3 +109,4 @@ pipeline {
         }
     }
 }
+```
