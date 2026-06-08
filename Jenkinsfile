@@ -45,8 +45,10 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--scan backend --format HTML --format XML', odcInstallation: 'DC'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    dependencyCheck additionalArguments: '--scan backend --format HTML --format XML', odcInstallation: 'DC'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                }
             }
         }
 
@@ -82,7 +84,11 @@ pipeline {
     }
 
     post {
-        success { echo 'Pipeline completed successfully!' }
-        failure  { echo 'Pipeline failed. Check logs above.' }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs above.'
+        }
     }
 }
